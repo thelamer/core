@@ -48,8 +48,7 @@ function plugin(options, imports, register) {
     imports.connect.use(api);
     
     api.get("/", function(req, res, next) {
-        res.writeHead(302, { "Location": options.sdk ? "/ide.html" : "/static/places.html" });
-        res.end();
+        res.render(__dirname + "/views/standalone.auth.html.ejs", {});
     });
     
     api.get("/ide.html", {
@@ -85,6 +84,14 @@ function plugin(options, imports, register) {
                 source: "query",
                 optional: true
             },  
+            username: {
+                source: "query",
+                optional: true
+            },
+            email: {
+                source: "query",
+                optional: true
+            },
             w: {
                 source: "query",
                 optional: true
@@ -96,7 +103,7 @@ function plugin(options, imports, register) {
 
         var collab = options.collab && req.params.collab !== 0 && req.params.nocollab != 1;
         var opts = extend({}, options);
-        opts.options.collab = collab;
+        opts.options.collab = true;
         if (req.params.packed == 1)
             opts.packed = opts.options.packed = true;
         
@@ -107,7 +114,9 @@ function plugin(options, imports, register) {
         
         api.updatConfig(opts.options, {
             w: req.params.w,
-            token: req.params.token
+            username: req.params.username,
+            email: req.params.email,
+            token: req.params.token || req.params.email || +new Date()
         });
         
         opts.options.debug = req.params.debug !== undefined;
@@ -256,9 +265,9 @@ function plugin(options, imports, register) {
         opts.accessToken = id || "token";
         var user = opts.extendOptions.user;
         user.id = id || -1;
-        user.name = id ? "user" + id : "johndoe";
-        user.email = id ? "user" + id + "@c9.io" : "johndoe@example.org";
-        user.fullname = id ? "User " + id : "John Doe";
+        user.name = params.username || "user" + id;
+        user.email = params.email || "user" + id + "@c9.io";
+        user.fullname = params.username || "user" + id;
         opts.workspaceDir = params.w ? params.w : options.workspaceDir;
         opts.projectName = basename(opts.workspaceDir);
         if (!options._projects) {
